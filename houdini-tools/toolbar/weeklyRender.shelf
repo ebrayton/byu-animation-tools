@@ -21,6 +21,9 @@ try:
     # (Remove param. for user choice)
     outputDir = wr.getOutputDir(wr.RENDERDIR)
     
+    # Get Test vs. Final Render
+    wr.getRenderType()
+
     # Get Mantra or HQueue
     local = wr.getRenderContext()
     

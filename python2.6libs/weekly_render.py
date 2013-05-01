@@ -22,10 +22,13 @@ FRAME_SUFFIX = "_$F3"
 FILE_TYPE = ".exr"
 
 MANTRA_NODES_PATH = "/out/owned_render_nodes1"
+MANTRA_CHOICES = ("Test", "Main")
+#MANTRA_VALID_FRAME_RANGES = ("Test_trange2", "Main_trange")
+#MANTRA_FRAME_RANGE_PREFIXES = ("Test_f4", "Main_f")
 MANTRA_NAME = "Main"
 
 #HQ_SERVER = "hqueue:5000"
-#HQ_JOB_NAME = "${USER}_${OS}_${HIPNAME}"
+HQ_JOB_NAME = "WEEKLYRENDER_${USER}_${OS}_${HIPNAME}"
 
 # Validation Functions #
 def _isValidTextFile(p):
@@ -68,7 +71,7 @@ def getHouFileName(shotname):
     return fileName
 
 def getOutFileName(shotName):
-    fileName = string.lower(shotName) + FRAME_SUFFIX + FILE_TYPE
+    fileName = string.lower(shotName) + "_" + MANTRA_NAME + "_" + FRAME_SUFFIX + FILE_TYPE
     return fileName
 
 # Houdini UI #
@@ -105,6 +108,13 @@ def getOutputDir(output = None):
     else:
         return hou.expandString(output)
 
+def getRenderType():
+    result = hou.ui.displayMessage("Render with Test settings (Test) or with Final settings (Main)?", 
+                                    buttons = MANTRA_CHOICES,
+                                    default_choice = 1, 
+                                    title = "Render Type")
+    MANTRA_NAME = MANTRA_CHOICES[result]
+
 def getRenderContext():
     local = hou.ui.displayMessage("Render locally (Mantra) or on the farm (HQueue)?", 
                                     buttons=('Local', 'Farm'),
@@ -122,6 +132,8 @@ def setUpMantraNode(shotName, frameRange):
     renderNodes.allowEditingOfContents()
     man = renderNodes.node(MANTRA_NAME)
     
+    man.parm("camera").deleteAllKeyframes()
+    man.parm("camera").set(cameraPath)
     man.parm("vm_picture").set(outputLoc)
     man.parm("trange").set("normal")
 
@@ -132,8 +144,11 @@ def setUpMantraNode(shotName, frameRange):
     return man
 
 def setUpHQueueNode(man):
+
     hq = hou.node("/out").createNode("hq_render")
     hq.parm("hq_driver").set(man.path())
+    hq.parm("hq_job_name").set(HQ_JOB_NAME)
+
     return hq
 
 # Main #
